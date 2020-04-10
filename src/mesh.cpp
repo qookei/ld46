@@ -1,10 +1,34 @@
 #include "mesh.h"
 #include <chrono>
 
-mesh::mesh(shader_prog *prog, size_t n_vertices)
-:_prog{prog}, _obj{}, _n_vertices{n_vertices}, _future{}, _valid{false} {
-	_obj.attach_program(prog);
-	_obj.generate(sizeof(vertex) * n_vertices);
+mesh::mesh(shader_prog *prog)
+:_prog{prog}, _vao{}, _vbo{}, _ebo{}, _future{}, _valid{false} {
+	_vao = std::make_unique<vao>();
+	_vbo = std::make_unique<buffer<GL_ARRAY_BUFFER, vertex *>>();
+}
+
+void mesh::add_ebo() {
+	_ebo = std::make_unique<buffer<GL_ELEMENT_ARRAY_BUFFER, GLint *>>();
+}
+
+void mesh::gen_buffers() {
+	_vao->generate();
+	_vbo->generate();
+	if (_ebo) _ebo->generate();
+}
+
+void mesh::gen_vao() {
+	_vao->bind();
+	_vbo->bind();
+	if (_ebo) _ebo->bind();
+
+	_vao->set_attrib_pointer(_prog, vertex_attr("vert_pos", 3, GL_FLOAT, GL_FALSE, vertex, pos));
+	_vao->set_attrib_pointer(_prog, vertex_attr("tex_pos", 2, GL_FLOAT, GL_FALSE, vertex, uv));
+	_vao->set_attrib_pointer(_prog, vertex_attr("color", 4, GL_FLOAT, GL_FALSE, vertex, color));
+
+	_vao->unbind();
+	_vbo->unbind();
+	if (_ebo) _ebo->unbind();
 }
 
 void mesh::render(texture &tex) {
@@ -17,10 +41,13 @@ void mesh::render(texture &tex) {
 		} else {
 			printf("mesh::render: mesh becomes ready\n");
 			assert(status == std::future_status::ready);
-			assert(_obj.mapped_buffer());
+			assert(_vbo->mapped_buffer());
+			assert(!_ebo || _ebo->mapped_buffer());
 
 			_future.get();
-			_obj.unmap();
+			_vbo->unmap();
+			if (_ebo)
+				_ebo->unmap();
 			_valid = true;
 		}
 	} else if (!_valid) {
@@ -28,8 +55,11 @@ void mesh::render(texture &tex) {
 		return;
 	}
 
-	assert(!_obj.mapped_buffer());
+	assert(!_vbo->mapped_buffer());
+	assert(!_ebo || !_ebo->mapped_buffer());
+
 	tex.bind();
-	_obj.render();
+	_vao->bind();
+	glDrawArrays(GL_TRIANGLES, 0, _vbo->size() / sizeof(vertex));
 }
 

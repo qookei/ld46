@@ -2,7 +2,10 @@
 #include <SDL.h>
 
 imgui_drawer::imgui_drawer(shader_prog *prog, window *wnd)
-:_mesh{prog, 0} {
+:_mesh{prog} {
+	_mesh.gen_buffers();
+	_mesh.gen_vao();
+
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
 
@@ -52,7 +55,7 @@ static glm::vec4 rgba_to_vec(uint32_t rgba) {
 	return {r, g, b, a};
 }
 
-size_t imgui_drawer::generate_mesh(ImDrawData *draw_data, vertex *verts) {
+void imgui_drawer::generate_mesh(ImDrawData *draw_data, vertex *verts, int *) {
 	size_t total = 0;
 
 	for (int i = 0; i < draw_data->CmdListsCount; i++) {
@@ -77,14 +80,12 @@ size_t imgui_drawer::generate_mesh(ImDrawData *draw_data, vertex *verts) {
 			total += pcmd->ElemCount;
 		}
 	}
-
-	return total;
 }
 
 void imgui_drawer::update_mesh() {
 	size_t n_verts = calc_n_verts(ImGui::GetDrawData());
 
-	_mesh.resize(n_verts);
+	_mesh.vbo()->store_regenerate(nullptr, n_verts * sizeof(vertex), GL_DYNAMIC_DRAW);
 	_mesh.update_sync(&imgui_drawer::generate_mesh, this, ImGui::GetDrawData());
 }
 

@@ -1,7 +1,10 @@
 #include "chunk_view.h"
 
 chunk_view::chunk_view(shader_prog *prog, int *tile_store)
-:_mesh{prog, vertices}, _tile_store{tile_store} {
+:_mesh{prog}, _tile_store{tile_store} {
+	_mesh.gen_buffers();
+	_mesh.gen_vao();
+	_mesh.vbo()->store_regenerate(nullptr, vertices * sizeof(vertex), GL_DYNAMIC_DRAW);
 }
 
 inline chunk_view::tile_info chunk_view::fetch_tile_info_for(int id) {
@@ -30,7 +33,7 @@ inline chunk_view::tile_info chunk_view::fetch_tile_info_for(int id) {
 	return infos[id];
 }
 
-size_t chunk_view::generate_mesh(vertex *verts) {
+void chunk_view::generate_mesh(vertex *verts, int *) {
 	for (int y = 0; y < height; y++) {
 		for (int x = 0; x < width; x++) {
 			vertex *back_verts = verts + ((x + y * width) * 6);
@@ -90,7 +93,6 @@ size_t chunk_view::generate_mesh(vertex *verts) {
 			front_verts[5].color = info.fg_color;
 		}
 	}
-	return vertices;
 }
 
 void chunk_view::update_mesh() {

@@ -12,7 +12,7 @@ struct imgui_drawer {
 
 	void render();
 private:
-	size_t generate_mesh(ImDrawData *, vertex *);
+	void generate_mesh(ImDrawData *, vertex *, int *);
 
 	texture _tex;
 	mesh _mesh;

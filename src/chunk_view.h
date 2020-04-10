@@ -24,7 +24,7 @@ private:
 
 	static inline tile_info fetch_tile_info_for(int id);
 
-	size_t generate_mesh(vertex *);
+	void generate_mesh(vertex *, int *);
 
 	mesh _mesh;
 	int *_tile_store;

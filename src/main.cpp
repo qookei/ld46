@@ -1,7 +1,6 @@
 #include <iostream>
 #include <window.h>
 #include <shader_prog.h>
-#include <vertex_object.h>
 #include <texture.h>
 #include <chunk_view.h>
 #include <imgui_drawer.h>
