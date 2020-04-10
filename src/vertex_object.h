@@ -19,7 +19,7 @@ struct vertex {
 struct vertex_object {
 	vertex_object()
 	:_vbo{0}, _vao{0}, _max_vertices{0}, _used_vertices{0},
-	_buffer_ptr{nullptr}, _prog{nullptr} {}
+	_buffer_ptr{nullptr}, _prog{nullptr}, _usage{0} {}
 
 	~vertex_object() {
 		if (_buffer_ptr)
@@ -34,13 +34,15 @@ struct vertex_object {
 	}
 
 	void generate(size_t n_vertices, GLenum usage = GL_DYNAMIC_DRAW) {
+		_usage = usage;
+
 		glGenVertexArrays(1, &_vao);
 		glGenBuffers(1, &_vbo);
 
 		glBindVertexArray(_vao);
 		glBindBuffer(GL_ARRAY_BUFFER, _vbo);
 
-		glBufferData(GL_ARRAY_BUFFER, n_vertices * sizeof(vertex), nullptr, usage);
+		glBufferData(GL_ARRAY_BUFFER, n_vertices * sizeof(vertex), nullptr, _usage);
 		_max_vertices = n_vertices;
 
 		GLuint xyz_attr = _prog->attribute_location("vert_pos");
@@ -113,6 +115,15 @@ struct vertex_object {
 		return _buffer_ptr;
 	}
 
+	// note: this thrashes existing buffer data
+	void resize(size_t size) {
+		_max_vertices = size;
+		if (_used_vertices > size)
+			_used_vertices = size;
+
+		glNamedBufferData(_vbo, size * sizeof(vertex), nullptr, _usage);
+	}
+
 private:
 	GLuint _vbo;
 	GLuint _vao;
@@ -122,4 +133,6 @@ private:
 	vertex *_buffer_ptr;
 
 	shader_prog *_prog;
+
+	GLenum _usage;
 };

@@ -38,6 +38,11 @@ struct mesh {
 
 	void generate_mesh();
 
+	void resize(size_t n_vertices) {
+		_obj.resize(n_vertices);
+		_n_vertices = n_vertices;
+	}
+
 	void render(texture &tex);
 
 private:

@@ -12,6 +12,7 @@ struct texture {
 	}
 
 	void load(const std::string &path);
+	void load(const void *data, int width, int height);
 
 	void bind() {
 		glBindTexture(GL_TEXTURE_2D, _id);

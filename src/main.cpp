@@ -4,6 +4,7 @@
 #include <vertex_object.h>
 #include <texture.h>
 #include <chunk_view.h>
+#include <imgui_drawer.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -15,16 +16,8 @@
 
 #include <type_traits>
 
-void gl_debug_callback(GLenum source, GLenum type, GLuint id, 
-		GLenum severity, GLsizei length, 
-		const char *message, const void *) {
-	const char *sev = "";
-	switch (severity) {
-		case GL_DEBUG_SEVERITY_HIGH: sev = "\e[91m"; break;
-		case GL_DEBUG_SEVERITY_MEDIUM: sev = "\e[93m"; break;
-		case GL_DEBUG_SEVERITY_LOW: sev = "\e[92m"; break;
-		case GL_DEBUG_SEVERITY_NOTIFICATION: sev = "\e[34m"; break;
-	}
+void gl_debug_callback(GLenum source, GLenum type, GLuint, GLenum,
+		GLsizei length, const char *message, const void *) {
 
 	const char *src = "?";
 	switch (source) {
@@ -48,25 +41,10 @@ void gl_debug_callback(GLenum source, GLenum type, GLuint id,
 		case GL_DEBUG_TYPE_OTHER: type_str = "other"; break;
 	}
 
-	fprintf(stderr, "debug:%s type: %s, source: %s, message: \"%.*s\"\e[0m\n", sev, type_str, src, length, message);
+	fprintf(stderr, "debug:type: %s, source: %s, message: \"%.*s\"\n", type_str, src, length, message);
 
 	if (type == GL_DEBUG_TYPE_ERROR)
 		window::report_fatal("GL error: source: %s, message: \"%.*s\"", src, length, message);
-}
-
-void test(shader_prog *p) {
-	vertex_object a, b;
-
-	a.attach_program(p);
-	b.attach_program(p);
-	a.generate(1000);
-	b.generate(1000);
-
-	vertex *a_map = a.map();
-	vertex *b_map = b.map();
-
-	b_map[999].pos = {1,0,1};
-	a_map[999].pos = {0,1,1};
 }
 
 int main(int argc, char *argv[]) {
@@ -95,10 +73,9 @@ int main(int argc, char *argv[]) {
 		tiles1[i] = n;
 		n = static_cast<double>(rand()) / static_cast<double>(RAND_MAX) * 16;
 		tiles2[i] = n;
-
 	}
 
-	test(&prog);
+	imgui_drawer _imgui_drawer{&prog, &_wnd};
 
 	auto view1 = std::make_unique<chunk_view>(&prog, tiles1);
 	auto view2 = std::make_unique<chunk_view>(&prog, tiles2);
@@ -136,6 +113,14 @@ int main(int argc, char *argv[]) {
 		prog.set_uniform("model", model);
 		view2->render(tex);
 
+		ImGui::NewFrame();
+
+		bool foo;
+		ImGui::ShowDemoWindow(&foo);
+
+		ImGui::Render();
+		_imgui_drawer.update_mesh();
+		_imgui_drawer.render();
 
 		_wnd.swap();
 	}

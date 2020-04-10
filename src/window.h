@@ -14,6 +14,16 @@ struct window {
 
 	void swap();
 
+	// TODO
+	int get_width() const {
+		return 1280;
+	}
+
+	// TODO
+	int get_height() const {
+		return 720;
+	}
+
 	[[noreturn]] static void report_fatal(const std::string &format, ...);
 private:
 	SDL_Window *_window;

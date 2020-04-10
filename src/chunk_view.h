@@ -20,9 +20,6 @@ private:
 		int fg_idx;
 		glm::vec4 bg_color;
 		glm::vec4 fg_color;
-
-		bool emits_light;
-		glm::vec4 light_color;
 	};
 
 	static inline tile_info fetch_tile_info_for(int id);
