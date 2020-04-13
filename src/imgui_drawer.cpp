@@ -110,8 +110,6 @@ void imgui_drawer::render() {
 			if (pcmd->UserCallback) {
 				if (pcmd->UserCallback != ImDrawCallback_ResetRenderState)
 					pcmd->UserCallback(cmd_list, pcmd);
-				else
-					fprintf(stderr, "imgui_drawer::render: user callback wants us to reset the state?\n");
 				continue;
 			}
 
@@ -124,7 +122,7 @@ void imgui_drawer::render() {
 			glDrawElementsBaseVertex(
 				GL_TRIANGLES,
 				static_cast<GLsizei>(pcmd->ElemCount),
-				GL_UNSIGNED_SHORT
+				GL_UNSIGNED_SHORT,
 				reinterpret_cast<void *>(
 					pcmd->IdxOffset *
 					sizeof(ImDrawIdx)),
@@ -132,7 +130,5 @@ void imgui_drawer::render() {
 			_mesh.vao()->unbind();
 		}
 	}
-
-	_mesh.render(_tex);
 }
 
