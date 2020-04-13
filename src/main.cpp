@@ -98,7 +98,10 @@ int main(int argc, char *argv[]) {
 		while(SDL_PollEvent(&ev)) {
 			if (ev.type == SDL_QUIT)
 				loop = false;
+			_imgui_drawer.process_event(&ev);
 		}
+
+		_imgui_drawer.update();
 
 		prog.use();
 
@@ -118,7 +121,6 @@ int main(int argc, char *argv[]) {
 		ImGui::ShowDemoWindow(&foo);
 
 		ImGui::Render();
-		_imgui_drawer.update_mesh();
 		_imgui_drawer.render();
 
 		_wnd.swap();

@@ -33,7 +33,7 @@ inline chunk_view::tile_info chunk_view::fetch_tile_info_for(int id) {
 	return infos[id];
 }
 
-void chunk_view::generate_mesh(vertex *verts, int *) {
+void chunk_view::generate_mesh(vertex *verts, GLuint *) {
 	for (int y = 0; y < height; y++) {
 		for (int x = 0; x < width; x++) {
 			vertex *back_verts = verts + ((x + y * width) * 6);

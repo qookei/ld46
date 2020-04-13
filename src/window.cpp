@@ -3,14 +3,14 @@
 
 window::window() {
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-		report_fatal("window::window: SDL_Init failed");
+		report_fatal("window::window: SDL_Init failed: %s", SDL_GetError());
 		return;
 	}
 
 	_window = SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_OPENGL);
 
 	if (!_window) {
-		report_fatal("window::window: SDL_CreateWindow failed");
+		report_fatal("window::window: SDL_CreateWindow failed: %s", SDL_GetError());
 		return;
 	}
 
@@ -22,11 +22,11 @@ window::window() {
 
 	_context = SDL_GL_CreateContext(_window);
 	if (!_context) {
-		report_fatal("window::window: SDL_GL_CreateContext failed");
+		report_fatal("window::window: SDL_GL_CreateContext failed: %s", SDL_GetError());
 		return;
 	}
 
-	SDL_GL_SetSwapInterval(0);
+	SDL_GL_SetSwapInterval(1);
 }
 
 window::~window() {

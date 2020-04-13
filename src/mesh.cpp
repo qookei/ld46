@@ -3,12 +3,12 @@
 
 mesh::mesh(shader_prog *prog)
 :_prog{prog}, _vao{}, _vbo{}, _ebo{}, _future{}, _valid{false} {
-	_vao = std::make_unique<vao>();
+	_vao = std::make_unique<gl_vao>();
 	_vbo = std::make_unique<buffer<GL_ARRAY_BUFFER, vertex *>>();
 }
 
 void mesh::add_ebo() {
-	_ebo = std::make_unique<buffer<GL_ELEMENT_ARRAY_BUFFER, GLint *>>();
+	_ebo = std::make_unique<buffer<GL_ELEMENT_ARRAY_BUFFER, GLuint *>>();
 }
 
 void mesh::gen_buffers() {
@@ -31,15 +31,14 @@ void mesh::gen_vao() {
 	if (_ebo) _ebo->unbind();
 }
 
-void mesh::render(texture &tex) {
+bool mesh::is_ready() {
 	if (_future.valid() && !_valid) {
 		auto status = _future.wait_for(std::chrono::seconds(0));
 
 		if (status == std::future_status::timeout) {
 			fprintf(stderr, "mesh::render: mesh is not generated yet\n");
-			return;
+			return false;
 		} else {
-			printf("mesh::render: mesh becomes ready\n");
 			assert(status == std::future_status::ready);
 			assert(_vbo->mapped_buffer());
 			assert(!_ebo || _ebo->mapped_buffer());
@@ -52,8 +51,15 @@ void mesh::render(texture &tex) {
 		}
 	} else if (!_valid) {
 		fprintf(stderr, "mesh::render: mesh is not valid at this point\n");
-		return;
+		return false;
 	}
+
+	return true;
+}
+
+void mesh::render(texture &tex) {
+	if (!is_ready())
+		return;
 
 	assert(!_vbo->mapped_buffer());
 	assert(!_ebo || !_ebo->mapped_buffer());

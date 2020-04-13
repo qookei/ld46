@@ -53,25 +53,30 @@ struct mesh {
 		);
 	}
 
-	/*vao *vao() {
+	bool is_ready();
+
+	gl_vao *vao() {
 		return _vao.get();
-	}*/
+	}
 
 	buffer<GL_ARRAY_BUFFER, vertex *> *vbo() {
 		return _vbo.get();
 	}
 
-	buffer<GL_ELEMENT_ARRAY_BUFFER, GLint *> *ebo() {
+	buffer<GL_ELEMENT_ARRAY_BUFFER, GLuint *> *ebo() {
 		return _ebo.get();
 	}
 
 	void render(texture &tex);
 
+	void mark_valid() {
+		_valid = true;
+	}
 private:
 	shader_prog *_prog;
-	std::unique_ptr<vao> _vao;
+	std::unique_ptr<gl_vao> _vao;
 	std::unique_ptr<buffer<GL_ARRAY_BUFFER, vertex *>> _vbo;
-	std::unique_ptr<buffer<GL_ELEMENT_ARRAY_BUFFER, GLint *>> _ebo;
+	std::unique_ptr<buffer<GL_ELEMENT_ARRAY_BUFFER, GLuint *>> _ebo;
 
 	std::future<void> _future;
 	std::atomic_bool _valid;

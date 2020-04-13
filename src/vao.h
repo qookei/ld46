@@ -7,12 +7,12 @@
 #include <glm/vec4.hpp>
 
 #define vertex_attr(name, elements, type, normalize, object, member) \
-	vao::attr_desc{name, elements, type, normalize, sizeof(object), offsetof(object, member)}
+	gl_vao::attr_desc{name, elements, type, normalize, sizeof(object), offsetof(object, member)}
 
-struct vao {
-	vao() :_id{0} {}
+struct gl_vao {
+	gl_vao() :_id{0} {}
 
-	~vao() {
+	~gl_vao() {
 		if (_id)
 			glDeleteVertexArrays(1, &_id);
 	}

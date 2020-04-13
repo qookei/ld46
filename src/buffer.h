@@ -62,7 +62,12 @@ struct buffer {
 		return _buffer_ptr;
 	}
 
-	void store(Ptr data, size_t offset, size_t size) {
+	void store(const void *data, size_t offset, size_t size) {
+		if (!data) {
+			fprintf(stderr, "buffer::store: data = nullptr!\n");
+			return;
+		}
+
 		if (_size < (size + offset)) {
 			window::report_fatal("buffer::store: buffer overrun, buffer size = %lu, store size = %lu, store offset = %lu", _size, size, offset);
 			abort();
@@ -88,7 +93,7 @@ struct buffer {
 		return _buffer_ptr;
 	}
 
-	void store_regenerate(Ptr data, size_t size, GLenum usage) {
+	void store_regenerate(const void *data, size_t size, GLenum usage) {
 		if (_size == size) {
 			store(data, 0, size);
 			return;
