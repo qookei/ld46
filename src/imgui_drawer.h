@@ -9,11 +9,12 @@
 struct imgui_drawer {
 	imgui_drawer(shader_prog *prog, window *wnd);
 
-	void process_event(SDL_Event *ev);
+	bool process_event(SDL_Event *ev);
 	void update();
 	void render();
 private:
-	texture _tex;
 	mesh _mesh;
-	int *_tile_store;
+	window *_wnd;
+	shader_prog *_prog;
+	texture _tex;
 };

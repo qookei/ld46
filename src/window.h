@@ -24,7 +24,7 @@ struct window {
 		return 720;
 	}
 
-	[[noreturn]] static void report_fatal(const std::string &format, ...);
+	[[noreturn]] static void report_fatal(const char *format, ...);
 private:
 	SDL_Window *_window;
 	SDL_GLContext _context;

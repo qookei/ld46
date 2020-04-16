@@ -39,14 +39,14 @@ void window::swap() {
 	SDL_GL_SwapWindow(_window);
 }
 
-[[noreturn]] void window::report_fatal(const std::string &format, ...) {
+[[noreturn]] void window::report_fatal(const char *format, ...) {
 	va_list va;
 	va_start(va, format);
 
 	char buf[2048];
 	memset(buf, 0, 2048);
 
-	vsnprintf(buf, 2047, format.c_str(), va);
+	vsnprintf(buf, 2047, format, va);
 
 	fprintf(stderr, "%s\n", buf);
 	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Engine Error", buf, nullptr);

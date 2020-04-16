@@ -15,6 +15,8 @@
 
 #include <type_traits>
 
+#include <console.h>
+
 void gl_debug_callback(GLenum source, GLenum type, GLuint, GLenum,
 		GLsizei length, const char *message, const void *) {
 
@@ -81,7 +83,7 @@ int main(int argc, char *argv[]) {
 	view1->update_mesh();
 	view2->update_mesh();
 
-	glm::mat4 ortho = glm::ortho(0.f, 1280.f, 720.f, 0.f);
+	glm::mat4 ortho = glm::ortho(0.f, 1280.f, 720.f, 0.f, 1.f, -1.f);
 
 	texture tex{};
 	tex.load("res/tiles.png");
@@ -89,6 +91,9 @@ int main(int argc, char *argv[]) {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	double i = 0;
+
+	bool draw_console = true;
 	bool loop = true;
 	while(loop) {
 		glClearColor(0.364f, 0.737f, 0.823f, 1.f);
@@ -96,9 +101,17 @@ int main(int argc, char *argv[]) {
 
 		SDL_Event ev;
 		while(SDL_PollEvent(&ev)) {
+			if (ev.type == SDL_WINDOWEVENT)
+				console::dbg("SDL_WINDOWEVENT occured");
 			if (ev.type == SDL_QUIT)
 				loop = false;
-			_imgui_drawer.process_event(&ev);
+			if (_imgui_drawer.process_event(&ev))
+				continue;
+			if (ev.type == SDL_TEXTINPUT) {
+				if (*ev.text.text == '~' || *ev.text.text == '`') {
+					draw_console = !draw_console;
+				}
+			}
 		}
 
 		_imgui_drawer.update();
@@ -111,17 +124,26 @@ int main(int argc, char *argv[]) {
 		prog.set_uniform("model", model);
 		//prog.set_uniform("tex", 0);
 		view1->render(tex);
-		model = glm::translate(model, glm::vec3{512,0,0});
+		model = glm::translate(model, glm::vec3{512 + sin(i) * 100. ,0,0});
 		prog.set_uniform("model", model);
 		view2->render(tex);
 
 		ImGui::NewFrame();
 
-		bool foo;
-		ImGui::ShowDemoWindow(&foo);
+		i += 0.1;
+
+		//console::info("haha %lu", i++);
+		//console::warn("lol %lu", i++);
+		//console::err("lmao %lu", i++);
+		//console::dbg("hah %lu", i++);
+
+		if (draw_console)
+			console::get().draw(&draw_console);
 
 		ImGui::Render();
 		_imgui_drawer.render();
+
+		ImGui::EndFrame();
 
 		_wnd.swap();
 	}
