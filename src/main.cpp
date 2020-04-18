@@ -2,7 +2,7 @@
 #include <window.h>
 #include <shader_prog.h>
 #include <texture.h>
-#include <chunk_view.h>
+#include <level.h>
 #include <imgui_drawer.h>
 
 #include <glm/glm.hpp>
@@ -16,6 +16,10 @@
 #include <type_traits>
 
 #include <console.h>
+
+#include <sprite.h>
+
+#include <random>
 
 void gl_debug_callback(GLenum source, GLenum type, GLuint, GLenum,
 		GLsizei length, const char *message, const void *) {
@@ -64,29 +68,25 @@ int main(int argc, char *argv[]) {
 	prog.with_fragment_shader("res/fragment.glsl");
 	prog.link();
 
-	int tiles1[chunk_view::width * chunk_view::height];
-	int tiles2[chunk_view::width * chunk_view::height];
+	std::random_device rd;
+	std::mt19937 mt19937{rd()};
+	std::uniform_int_distribution dist{-5, 5};
 
-	srand(time(nullptr));
-
-	for (size_t i = 0; i < sizeof(tiles1) / sizeof(*tiles1); i++) {
-		int n = static_cast<double>(rand()) / static_cast<double>(RAND_MAX) * 16;
-		tiles1[i] = n;
-		n = static_cast<double>(rand()) / static_cast<double>(RAND_MAX) * 16;
-		tiles2[i] = n;
-	}
+	auto rng = std::bind(dist, mt19937);
 
 	imgui_drawer _imgui_drawer{&prog, &_wnd};
 
-	auto view1 = std::make_unique<chunk_view>(&prog, tiles1);
-	auto view2 = std::make_unique<chunk_view>(&prog, tiles2);
-	view1->update_mesh();
-	view2->update_mesh();
+	level level1{"res/level1.json", &prog};
 
-	glm::mat4 ortho = glm::ortho(0.f, 1280.f, 720.f, 0.f, 1.f, -1.f);
+	sprite bg1_sprite{"res/bg1.png", &prog, 1280, 720};
+	//sprite pillar_sprite{"res/tiles.png", &prog, 512, 512, 60, 196, 0, 0};
+	//pillar_sprite.position() = {6, 72, 0};
+	//sprite stone1_sprite{"res/tiles.png", &prog, 512, 512, 72, 72, 78, 0};
 
-	texture tex{};
-	tex.load("res/tiles.png");
+	glm::mat4 ortho = glm::ortho(0.f, 1280.f, 720.f, 0.f);
+
+	//texture tex{};
+	//tex.load("res/tiles.png");
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -101,8 +101,6 @@ int main(int argc, char *argv[]) {
 
 		SDL_Event ev;
 		while(SDL_PollEvent(&ev)) {
-			if (ev.type == SDL_WINDOWEVENT)
-				console::dbg("SDL_WINDOWEVENT occured");
 			if (ev.type == SDL_QUIT)
 				loop = false;
 			if (_imgui_drawer.process_event(&ev))
@@ -118,24 +116,23 @@ int main(int argc, char *argv[]) {
 
 		prog.use();
 
-		glm::mat4 model = glm::translate(glm::vec3{0.f, 0.f, 0.f});
+		//glm::mat4 model = glm::translate(glm::vec3{0.f, 0.f, 0.f});
 
 		prog.set_uniform("ortho", ortho);
-		prog.set_uniform("model", model);
+		bg1_sprite.render({0, 0, 0});
+		//pillar_sprite.render({0, 0, 0});
+		//stone1_sprite.render({0, 0, 0});
+		level1.render({rng(), rng(), 0});
+		//prog.set_uniform("model", model);
 		//prog.set_uniform("tex", 0);
-		view1->render(tex);
-		model = glm::translate(model, glm::vec3{512 + sin(i) * 100. ,0,0});
-		prog.set_uniform("model", model);
-		view2->render(tex);
+		//view1->render(tex);
+		//model = glm::translate(model, glm::vec3{512 + sin(i) * 100. ,0,0});
+		//prog.set_uniform("model", model);
+		//view2->render(tex);
 
 		ImGui::NewFrame();
 
 		i += 0.1;
-
-		//console::info("haha %lu", i++);
-		//console::warn("lol %lu", i++);
-		//console::err("lmao %lu", i++);
-		//console::dbg("hah %lu", i++);
 
 		if (draw_console)
 			console::get().draw(&draw_console);

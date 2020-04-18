@@ -6,7 +6,7 @@ sources = files(
 	'src/utils/mapped_file.cpp',
 	'src/utils/errors.cpp',
 	'src/mesh.cpp',
-	'src/chunk_view.cpp',
+	'src/level.cpp',
 	'src/imgui_drawer.cpp',
 	'src/texture.cpp',
 	'src/window.cpp')
@@ -18,6 +18,7 @@ epoxy_dep = dependency('epoxy')
 threads_dep = dependency('threads')
 
 glm_inc = include_directories('subprojects/glm/')
+subprojects_inc = include_directories('subprojects/')
 
 imgui_lib = static_library('imgui',
 		files(
@@ -32,5 +33,5 @@ imgui_inc = include_directories('subprojects/imgui')
 imgui_dep = declare_dependency(link_with: imgui_lib, include_directories: imgui_inc)
 
 executable('ldeng', sources,
-	include_directories: [includes, glm_inc],
+	include_directories: [includes, glm_inc, subprojects_inc],
 	dependencies: [sdl2_dep, epoxy_dep, threads_dep, imgui_dep])

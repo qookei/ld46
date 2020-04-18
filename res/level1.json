@@ -1,0 +1,22 @@
+{
+	"textures": {
+		"tiles1": {"path": "res/tiles.png", "size": [512, 512]}
+	},
+
+	"objects": {
+		"pillar1": {"tex": "tiles1", "pos": [128, 650], "size": [60, 196], "tex_pos": [0, 0], "tex_size": [60, 196]},
+		"pillar2": {"tex": "tiles1", "pos": [1092, 650], "size": [60, 196], "tex_pos": [0, 0], "tex_size": [60, 196]},
+		"stone1": {"tex": "tiles1", "pos": [0, 0], "size": [72, 72], "tex_pos": [78, 0], "tex_size": [72, 72]},
+		"plat1_edge1": {"tex": "tiles1", "pos": [200, 200], "size": [9, 21], "tex_pos": [150, 36], "tex_size": [9, 21]},
+		"plat1_mid1": {"tex": "tiles1", "pos": [209, 200], "size": [20, 22], "tex_pos": [162, 36], "tex_size": [20, 22], "times": 5},
+		"plat1_edge2": {"tex": "tiles1", "pos": [309, 200], "size": [9, 21], "tex_pos": [182, 36], "tex_size": [8, 21]},
+
+		"main_plat1_edge1": {"tex": "tiles1", "pos": [100, 614], "size": [18, 36], "tex_pos": [150, 0], "tex_size": [18, 36]},
+		"main_plat1_mid1": {"tex": "tiles1", "pos": [118, 614], "size": [36, 36], "tex_pos": [168, 0], "tex_size": [36, 36], "times": 29},
+		"main_plat1_edge2": {"tex": "tiles1", "pos": [1162, 614], "size": [18, 36], "tex_pos": [204, 0], "tex_size": [18, 36]},
+
+
+		"pedestal": {"tex": "tiles1", "pos": [489, 532], "size": [40, 62], "tex_pos": [103, 77], "tex_size": [40, 62]},
+		"egg": {"tex": "tiles1", "pos": [500, 500], "size": [18, 39], "tex_pos": [74, 77], "tex_size": [18, 39]}
+	}
+}
