@@ -6,6 +6,14 @@
 #include <console.h>
 
 struct sprite {
+	friend void swap(sprite &a, sprite &b) {
+		using std::swap;
+		swap(a._m, b._m);
+		swap(a._t, b._t);
+		swap(a._prog, b._prog);
+		swap(a._pos, b._pos);
+	}
+
 	sprite(const std::string &path, shader_prog *prog, int sw, int sh)
 	:_m{prog}, _t{}, _prog{prog}, _pos{0, 0, 0} {
 		_t.load(path);
@@ -87,6 +95,18 @@ struct sprite {
 			_vertices.size() * sizeof(vertex),
 			GL_STATIC_DRAW);
 		_m.mark_valid();
+	}
+
+	sprite(const sprite &) = delete;
+	sprite &operator=(const sprite &) = delete;
+
+	sprite(sprite &&other) {
+		swap(*this, other);
+	}
+
+	sprite &operator=(sprite &&other) {
+		swap(*this, other);
+		return *this;
 	}
 
 	void render(glm::vec3 world_transform) {

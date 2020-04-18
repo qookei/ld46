@@ -16,7 +16,32 @@ struct vertex {
 };
 
 struct mesh {
+	friend void swap(mesh &a, mesh &b) {
+		using std::swap;
+		swap(a._prog, b._prog);
+		swap(a._vao, b._vao);
+		swap(a._vbo, b._vbo);
+		swap(a._ebo, b._ebo);
+		swap(a._future, b._future);
+		a._valid = b._valid.exchange(a._valid);
+	}
+
+	mesh() = default;
 	mesh(shader_prog *prog);
+
+	mesh(const mesh &) = delete;
+	mesh &operator=(const mesh &) = delete;
+
+	mesh(mesh &&other) {
+		swap(*this, other);
+	}
+
+	mesh &operator=(mesh &&other) {
+		swap(*this, other);
+		return *this;
+	}
+
+
 
 	void add_ebo();
 	void gen_buffers();

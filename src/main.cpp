@@ -52,6 +52,20 @@ void gl_debug_callback(GLenum source, GLenum type, GLuint, GLenum,
 		window::report_fatal("GL error: source: %s, message: \"%.*s\"", src, length, message);
 }
 
+static std::mt19937 mt19937(std::random_device{}());
+
+template <typename T>
+static T rng_between(T min, T max) {
+	if constexpr (std::is_floating_point_v<T>) {
+		std::uniform_real_distribution dist{min, max};
+		return dist(mt19937);
+	} else {
+		static_assert(std::is_integral_v<T>);
+		std::uniform_int_distribution dist{min, max};
+		return dist(mt19937);
+	}
+}
+
 int main(int argc, char *argv[]) {
 	window _wnd;
 
@@ -68,31 +82,43 @@ int main(int argc, char *argv[]) {
 	prog.with_fragment_shader("res/fragment.glsl");
 	prog.link();
 
-	std::random_device rd;
-	std::mt19937 mt19937{rd()};
-	std::uniform_int_distribution dist{-5, 5};
-
-	auto rng = std::bind(dist, mt19937);
-
 	imgui_drawer _imgui_drawer{&prog, &_wnd};
 
 	level level1{"res/level1.json", &prog};
 
 	sprite bg1_sprite{"res/bg1.png", &prog, 1280, 720};
-	//sprite pillar_sprite{"res/tiles.png", &prog, 512, 512, 60, 196, 0, 0};
-	//pillar_sprite.position() = {6, 72, 0};
-	//sprite stone1_sprite{"res/tiles.png", &prog, 512, 512, 72, 72, 78, 0};
+
+	int n = rng_between<int>(8, 32);
+
+	std::vector<sprite> ufos;
+	std::vector<glm::vec3> ufo_speeds;
+	ufos.reserve(n);
+	ufo_speeds.reserve(n);
+
+	for (int i = 0; i < n; i++) {
+		ufos.push_back(sprite{"res/tiles.png", &prog, 2048, 2048, 72, 68, 296, 473});
+		auto &pos = ufos.back().position();
+		pos = glm::vec3{
+			rng_between<int>(0, 1) ? -72 : 1280,
+			rng_between<int>(16, 128),
+			0
+		} + glm::vec3{rng_between<int>(-1000, 1000), 0, 0};
+
+		while (pos.x < -72) pos.x += 1280;
+		while (pos.x > 1280) pos.x -= 1280;
+
+		ufo_speeds.push_back(glm::vec3{rng_between<int>(0, 1) ? 1 : -1, 0, 0});
+	}
+
 
 	glm::mat4 ortho = glm::ortho(0.f, 1280.f, 720.f, 0.f);
-
-	//texture tex{};
-	//tex.load("res/tiles.png");
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	double i = 0;
 
+	bool do_screen_shake = false;
 	bool draw_console = true;
 	bool loop = true;
 	while(loop) {
@@ -109,26 +135,39 @@ int main(int argc, char *argv[]) {
 				if (*ev.text.text == '~' || *ev.text.text == '`') {
 					draw_console = !draw_console;
 				}
+				if (*ev.text.text == '1' || *ev.text.text == '!') {
+					do_screen_shake = !do_screen_shake;
+				}
 			}
+
 		}
 
 		_imgui_drawer.update();
 
 		prog.use();
 
-		//glm::mat4 model = glm::translate(glm::vec3{0.f, 0.f, 0.f});
+		double mag = sin(i);
+
+		glm::vec3 screen_shake_offset{0, 0, 0};
+		if (do_screen_shake)
+			screen_shake_offset = {rng_between<double>(-1, 1),
+					rng_between<double>(-1, 1), 0};
+
+		screen_shake_offset *= mag * 5;
 
 		prog.set_uniform("ortho", ortho);
 		bg1_sprite.render({0, 0, 0});
-		//pillar_sprite.render({0, 0, 0});
-		//stone1_sprite.render({0, 0, 0});
-		level1.render({rng(), rng(), 0});
-		//prog.set_uniform("model", model);
-		//prog.set_uniform("tex", 0);
-		//view1->render(tex);
-		//model = glm::translate(model, glm::vec3{512 + sin(i) * 100. ,0,0});
-		//prog.set_uniform("model", model);
-		//view2->render(tex);
+		level1.render(screen_shake_offset);
+		for (int i = 0; i < n; i++) {
+			ufos[i].render(screen_shake_offset);
+			ufos[i].position() += ufo_speeds[i];
+
+			auto &pos = ufos[i].position();
+			if (pos.x < -72)
+				pos.x = 1280;
+			if (pos.x > 1280)
+				pos.x = -72;
+		}
 
 		ImGui::NewFrame();
 
