@@ -1,6 +1,6 @@
 {
 	"textures": {
-		"tiles1": {"path": "res/tiles.png", "size": [2048, 2048]}
+		"tiles1": {"path": "res/tiles.png", "size": [888, 780]}
 	},
 
 	"objects": {
@@ -12,7 +12,5 @@
 
 		"pedestal": {"tex": "tiles1", "pos": [560, 404], "size": [160, 112], "tex_pos": [412, 308], "tex_size": [160, 112]},
 		"egg": {"tex": "tiles1", "pos": [604, 284], "size": [72, 156], "tex_pos": [296, 308], "tex_size": [72, 156]}
-	},
-	
-	"stone1": {"tex": "tiles1", "pos": [0, 0], "size": [288, 288], "tex_pos": [312, 0], "tex_size": [288, 288]}
+	}
 }

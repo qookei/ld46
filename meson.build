@@ -7,6 +7,7 @@ sources = files(
 	'src/utils/errors.cpp',
 	'src/mesh.cpp',
 	'src/level.cpp',
+	'src/build_tile_view.cpp',
 	'src/imgui_drawer.cpp',
 	'src/texture.cpp',
 	'src/window.cpp')

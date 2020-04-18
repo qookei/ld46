@@ -57,3 +57,9 @@ void texture::load(const void *data, int width, int height) {
 
 	unbind();
 }
+
+void texture::reload(const void *data) {
+	bind();
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _width, _height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+	unbind();
+}
