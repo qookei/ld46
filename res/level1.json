@@ -11,10 +11,12 @@
 		"plat1_edge2": {"tex": "tiles1", "pos": [1192, 516], "size": [36, 84], "tex_pos": [728, 144], "tex_size": [36, 84]},
 
 		"pedestal": {"tex": "tiles1", "pos": [560, 404], "size": [160, 112], "tex_pos": [412, 308], "tex_size": [160, 112]},
-		"egg": {"tex": "tiles1", "pos": [604, 284], "size": [72, 156], "tex_pos": [296, 308], "tex_size": [72, 156]}
+		"egg": {"tex": "tiles1", "pos": [604, 284], "size": [72, 156], "tex_pos": [296, 308], "tex_size": [72, 156]},
+		"hatched": {"tex": "tiles1", "pos": [604, 284], "size": [72, 156], "tex_pos": [300, 558], "tex_size": [72, 156]}
 	},
 
 	"replacements": {
-		"egg": {"tex": "tiles1", "pos": [604, 284], "size": [72, 156], "tex_pos": [386, 418], "tex_size": [72, 156]}
+		"egg": {"tex": "tiles1", "pos": [604, 284], "size": [72, 156], "tex_pos": [386, 418], "tex_size": [72, 156]},
+		"hatched": {"tex": "tiles1", "pos": [604, 284], "size": [72, 156], "tex_pos": [437, 588], "tex_size": [72, 156]}
 	}
 }

@@ -38,7 +38,7 @@ imgui_drawer::imgui_drawer(shader_prog *prog, window *wnd)
 	ImGui::StyleColorsDark();
 
 	auto &io = ImGui::GetIO();
-	//io.Fonts->AddFontFromFileTTF("res/DejaVuSansMono.ttf", 16, nullptr, io.Fonts->GetGlyphRangesDefault());
+	io.IniFilename = nullptr;
 
 	io.DisplaySize = ImVec2{
 		static_cast<float>(wnd->get_width()),

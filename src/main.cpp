@@ -173,15 +173,6 @@ extern "C" int main(int, char **) {
 
 	build_tile_view tiles{&prog};
 
-	for (int x = 0; x < build_tile_view::width; x++) {
-		for (int y = 0; y < build_tile_view::height; y++) {
-			if (tiles.is_valid_spot(x, y))
-				tiles.set(x, y, false);
-		}
-	}
-
-	tiles.upload_texture();
-
 	auto add_ufo = [&](){
 		auto pos = glm::vec3{
 			rng_between<int>(0, 1) ? -72 : 1280,
@@ -195,8 +186,6 @@ extern "C" int main(int, char **) {
 		ufos.push_back(pos);
 		ufo_speeds.push_back(glm::vec3{rng_between<int>(0, 1) ? 2 : -2, 0, 0});
 	};
-
-	add_ufo();
 
 	glm::mat4 ortho = glm::ortho(0.f, 1280.f, 720.f, 0.f);
 
@@ -285,10 +274,12 @@ extern "C" int main(int, char **) {
 	auto time2 = std::chrono::high_resolution_clock::now();
 	auto time3 = std::chrono::high_resolution_clock::now();
 	auto time4 = std::chrono::high_resolution_clock::now();
+	auto time5 = std::chrono::high_resolution_clock::now();
 	bool in_menu = true;
 	bool is_main_menu = true;
 	bool is_game_over = false;
 	bool draw_console = false;
+	bool has_hatched = false;
 	bool loop = true;
 
 	auto reset_state = [&]() {
@@ -299,6 +290,7 @@ extern "C" int main(int, char **) {
 		time2 = std::chrono::high_resolution_clock::now();
 		time3 = std::chrono::high_resolution_clock::now();
 		time4 = std::chrono::high_resolution_clock::now();
+		time5 = std::chrono::high_resolution_clock::now();
 
 		for (int x = 0; x < build_tile_view::width; x++) {
 			for (int y = 0; y < build_tile_view::height; y++) {
@@ -312,6 +304,15 @@ extern "C" int main(int, char **) {
 		level1.object("egg").enabled = true;
 		level1.swap_object_with_replacement("egg");
 		level1.object("egg").enabled = true;
+
+		level1.object("hatched").enabled = true;
+		level1.swap_object_with_replacement("hatched");
+		level1.object("hatched").enabled = true;
+
+		level1.object("hatched").enabled = false;
+		level1.object("egg").enabled = true;
+
+		level1.generate_mesh();
 
 		ufos.clear();
 		ufo_speeds.clear();
@@ -356,11 +357,10 @@ extern "C" int main(int, char **) {
 				console::dbg("is hard mode? %s", is_hard_mode ? "yes" : "no");
 				in_menu = false;
 				is_main_menu = false;
+				level1.swap_object_with_replacement("egg");
+				level1.swap_object_with_replacement("hatched");
+				reset_state();
 
-				time1 = std::chrono::high_resolution_clock::now();
-				time2 = std::chrono::high_resolution_clock::now();
-				time3 = std::chrono::high_resolution_clock::now();
-				time4 = std::chrono::high_resolution_clock::now();
 			} else if (ev.type == SDL_MOUSEBUTTONDOWN && is_game_over) {
 				console::dbg("here");
 				reset_state();
@@ -435,13 +435,19 @@ extern "C" int main(int, char **) {
 					hp--;
 					if (hp == 1) {
 						Mix_PlayChannel(-1, explosion_sound, 0);
+						bool oe = level1.object("egg").enabled, oh = level1.object("hatched").enabled;
 						level1.swap_object_with_replacement("egg");
+						level1.swap_object_with_replacement("hatched");
+						level1.object("egg").enabled = oe;
+						level1.object("hatched").enabled = oh;
+						level1.generate_mesh();
 						_missile.do_remove = true;
 					}
 
 					if (!hp) {
 						Mix_PlayChannel(-1, death_sound, 0);
 						level1.object("egg").enabled = false;
+						level1.object("hatched").enabled = false;
 						level1.generate_mesh();
 						is_game_over = true;
 						in_menu = true;
@@ -489,6 +495,13 @@ extern "C" int main(int, char **) {
 			if (now - time3 >= 6s) {
 				rate += 0.2f;
 				time3 = now;
+			}
+
+			if (!has_hatched && now - time5 >= 1min) {
+				level1.object("hatched").enabled = true;
+				level1.object("egg").enabled = false;
+				level1.generate_mesh();
+				has_hatched = true;
 			}
 		}
 
