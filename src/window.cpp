@@ -7,7 +7,7 @@ window::window() {
 		return;
 	}
 
-	_window = SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_OPENGL);
+	_window = SDL_CreateWindow("UFO Shield", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_OPENGL);
 
 	if (!_window) {
 		report_fatal("window::window: SDL_CreateWindow failed: %s", SDL_GetError());

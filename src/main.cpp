@@ -122,14 +122,22 @@ int main() {
 	level level1{"res/level1.json", &prog};
 
 	sprite bg1_sprite{"res/bg1.png", &prog, 1280, 720};
+	sprite bg2_sprite{"res/bg2.png", &prog, 1280, 720};
 	sprite cur_sprite{"res/cur.png", &prog, 32, 32};
 	sprite gameover_sprite{"res/gameover.png", &prog, 643, 99};
-	sprite toexit_sprite{"res/toexit.png", &prog, 853, 100};
+	sprite toexit_sprite{"res/toexit.png", &prog, 1035, 104};
+	sprite title_sprite{"res/title.png", &prog, 624, 104};
+	sprite info_sprite{"res/info.png", &prog, 1081, 227};
+	sprite howto_sprite{"res/howto.png", &prog, 885, 178};
 	sprite rain_sprite{"res/rain.png", &prog, 200, 210, 2000, 2000, 0, 0};
 	auto base_pos = rain_sprite.position() = {-500, -500, 0};
 
 	gameover_sprite.position() = {318, 310, 0};
-	toexit_sprite.position() = {213, 410, 0};
+	toexit_sprite.position() = {122, 410, 0};
+
+	title_sprite.position() = {328, 100, 0};
+	info_sprite.position() = {99, 220, 0};
+	howto_sprite.position() = {10, 532, 0};
 
 	int n = 1;
 
@@ -260,6 +268,8 @@ int main() {
 	auto time1 = std::chrono::high_resolution_clock::now();
 	auto time2 = std::chrono::high_resolution_clock::now();
 	auto time3 = std::chrono::high_resolution_clock::now();
+	bool in_menu = true;
+	bool is_main_menu = true;
 	bool is_game_over = false;
 	bool draw_console = false;
 	bool loop = true;
@@ -279,7 +289,7 @@ int main() {
 				if (*ev.text.text == '~' || *ev.text.text == '`')
 					draw_console = !draw_console;
 			}
-			if (ev.type == SDL_MOUSEBUTTONDOWN && !is_game_over) {
+			if (ev.type == SDL_MOUSEBUTTONDOWN && !in_menu) {
 				int x = ev.button.x - 72 - next_size / 2,
 					y = ev.button.y - 140 - next_size / 2;
 				bool h = true;
@@ -298,7 +308,13 @@ int main() {
 				if (h)
 					next_size = rng_between<int>(block_size_min, block_size_max) * 2;
 			}
-			if (ev.type == SDL_MOUSEMOTION && !is_game_over) {
+			if (ev.type == SDL_MOUSEBUTTONDOWN && is_main_menu) {
+				bool is_hard_mode = ev.button.button == SDL_BUTTON_RIGHT;
+				console::dbg("is hard mode? %s", is_hard_mode ? "yes" : "no");
+				in_menu = false;
+				is_main_menu = false;
+			}
+			if (ev.type == SDL_MOUSEMOTION && !in_menu) {
 				int x = ev.motion.x - 16, y = ev.motion.y - 16;
 
 				cur_sprite.position() = {x, y, 0};
@@ -332,7 +348,7 @@ int main() {
 		for (size_t i = 0; i < ufos.size(); i++) {
 			ufo.position() = ufos[i];
 			ufo.render(screen_shake_offset);
-			if (!is_game_over)
+			if (!in_menu)
 				ufos[i] += ufo_speeds[i];
 
 			auto &pos = ufos[i];
@@ -342,14 +358,14 @@ int main() {
 				pos.x = -72;
 		}
 
-		if (!is_game_over && rng_between<float>(1, 100) > 99.f - rate) {
+		if (!in_menu && rng_between<float>(1, 100) > 99.f - rate) {
 			missiles.push_back(missile{ufos[rng_between<size_t>(0, ufos.size() - 1)], {}, {}});
 		}
 
 		for (auto &_missile : missiles) {
 			_missile.render(screen_shake_offset, missile_spr);
 
-			if (!is_game_over) {
+			if (!in_menu) {
 				_missile.update();
 
 				int x = _missile.position.x - 72;
@@ -371,6 +387,7 @@ int main() {
 					if (!hp) {
 						level1.remove_object("egg");
 						is_game_over = true;
+						in_menu = true;
 					}
 				}
 			}
@@ -387,14 +404,14 @@ int main() {
 		if (crate_visible) {
 			crate_spr.position() = crate_pos;
 			crate_spr.render(screen_shake_offset);
-			if (!is_game_over)
+			if (!in_menu)
 				crate_pos += glm::vec3{0, 2, 0};
 
 			if (crate_pos.y >= 720)
 				crate_visible = false;
 		}
 
-		if (!is_game_over) {
+		if (!in_menu) {
 			auto now = std::chrono::high_resolution_clock::now();
 
 			if (now - time1 >= 10s) {
@@ -433,10 +450,20 @@ int main() {
 
 		prog.set_uniform("model_color", glm::vec4({1,1,1,1}));
 
+		if (in_menu)
+			bg2_sprite.render({0,0,0});
+
 		if (is_game_over) {
 			gameover_sprite.render({0,0,0});
 			toexit_sprite.render({0,0,0});
 		}
+
+		if (is_main_menu) {
+			title_sprite.render({0,0,0});
+			info_sprite.render({0,0,0});
+			howto_sprite.render({0,0,0});
+		}
+
 
 		ImGui::NewFrame();
 
