@@ -12,5 +12,9 @@
 
 		"pedestal": {"tex": "tiles1", "pos": [560, 404], "size": [160, 112], "tex_pos": [412, 308], "tex_size": [160, 112]},
 		"egg": {"tex": "tiles1", "pos": [604, 284], "size": [72, 156], "tex_pos": [296, 308], "tex_size": [72, 156]}
+	},
+
+	"replacements": {
+		"egg": {"tex": "tiles1", "pos": [604, 284], "size": [72, 156], "tex_pos": [386, 418], "tex_size": [72, 156]}
 	}
 }

@@ -21,6 +21,7 @@
 #include <sprite.h>
 
 #include <random>
+#include <chrono>
 
 void gl_debug_callback(GLenum source, GLenum type, GLuint, GLenum,
 		GLsizei length, const char *message, const void *) {
@@ -67,7 +68,40 @@ static T rng_between(T min, T max) {
 	}
 }
 
-int main(int argc, char *argv[]) {
+struct missile {
+	glm::vec3 position;
+	glm::vec3 velocity;
+	float angle;
+	float d = 2.f;
+	float speed = rng_between<float>(1.8f, 2.2f);
+
+	int i = 0;
+	constexpr static int n = 50;
+
+	bool do_remove = false;
+
+	void render(glm::vec3 world_transform, sprite &sp) {
+		sp.position() = position + glm::vec3{12, 20, 0};
+		sp.render(world_transform, angle, true);
+	}
+
+	void update() {
+		auto tx = 640 - position.x;
+		auto ty = -(362 - position.y);
+		angle = std::atan2(tx, ty);
+		velocity *= 0.1;
+		if (i++ > n) {
+			d = rng_between<float>(1.8f, 2.2f);
+			i = 0;
+		}
+		velocity += glm::vec3{std::cos(angle - M_PI / d) * speed,
+			std::sin(angle - M_PI / d) * speed, 0};
+		position += velocity;
+	}
+};
+
+int main() {
+	using namespace std::literals::chrono_literals;
 	window _wnd;
 
 	glEnable(GL_DEBUG_OUTPUT);
@@ -88,27 +122,42 @@ int main(int argc, char *argv[]) {
 	level level1{"res/level1.json", &prog};
 
 	sprite bg1_sprite{"res/bg1.png", &prog, 1280, 720};
+	sprite cur_sprite{"res/cur.png", &prog, 32, 32};
+	sprite gameover_sprite{"res/gameover.png", &prog, 643, 99};
+	sprite toexit_sprite{"res/toexit.png", &prog, 853, 100};
+	sprite rain_sprite{"res/rain.png", &prog, 200, 210, 2000, 2000, 0, 0};
+	auto base_pos = rain_sprite.position() = {-500, -500, 0};
 
-	int n = 1;//rng_between<int>(8, 32);
+	gameover_sprite.position() = {318, 310, 0};
+	toexit_sprite.position() = {213, 410, 0};
+
+	int n = 1;
 
 	sprite ufo{"res/tiles.png", &prog, 888, 780, 72, 68, 296, 473};
+	sprite missile_spr{"res/missile.png", &prog, 24, 56, 24, 56, 0, 0};
+	sprite crate_spr{"res/tiles.png", &prog, 888, 780, 32, 32, 485, 448};
 	std::vector<glm::vec3> ufos;
 	std::vector<glm::vec3> ufo_speeds;
 	ufos.reserve(n);
 	ufo_speeds.reserve(n);
+
+	std::vector<missile> missiles;
+
+	glm::vec3 crate_pos = {-32, -32, 0};
+	bool crate_visible = false;
 
 	build_tile_view tiles{&prog};
 
 	for (int x = 0; x < build_tile_view::width; x++) {
 		for (int y = 0; y < build_tile_view::height; y++) {
 			if (tiles.is_valid_spot(x, y))
-				tiles.set(x, y, true);
+				tiles.set(x, y, false);
 		}
 	}
 
 	tiles.upload_texture();
 
-	for (int i = 0; i < n; i++) {
+	auto add_ufo = [&](){
 		auto pos = glm::vec3{
 			rng_between<int>(0, 1) ? -72 : 1280,
 			rng_between<int>(16, 64),
@@ -119,9 +168,12 @@ int main(int argc, char *argv[]) {
 		while (pos.x > 1280) pos.x -= 1280;
 
 		ufos.push_back(pos);
-		ufo_speeds.push_back(glm::vec3{rng_between<int>(0, 1) ? 1 : -1, 0, 0});
-	}
+		ufo_speeds.push_back(glm::vec3{rng_between<int>(0, 1) ? 2 : -2, 0, 0});
+	};
 
+	for (int i = 0; i < n; i++) {
+		add_ufo();
+	}
 
 	glm::mat4 ortho = glm::ortho(0.f, 1280.f, 720.f, 0.f);
 
@@ -136,15 +188,13 @@ int main(int argc, char *argv[]) {
 		magnitude = mag + magnitude;
 	};
 
-	auto break_around = [&](int r, int x, int y){
+	auto break_around = [&](int x, int y, int r){
 		trigger_screenshake(1);
-		for (int px = x - r; px < x + r; px++) {
-			for (int py = y - r; py < y + r; py++) {
+		for (int px = x - r; px <= x + r; px++) {
+			for (int py = y - r; py <= y + r; py++) {
 				auto dist = std::hypot(px - x, py - y)
 					+ rng_between<int>(0, 4);
-				if (dist < r && px >= 0 && py >= 0
-					&& px < build_tile_view::width &&
-					py < build_tile_view::height) {
+				if (dist < r && tiles.is_valid_spot(px, py)) {
 					tiles.set(px, py, false);
 				}
 			}
@@ -152,10 +202,69 @@ int main(int argc, char *argv[]) {
 		tiles.upload_texture();
 	};
 
+	auto check_rect = [&tiles](int x, int y, int side) -> int {
+		int n = 0;
+		for (int px = x; px < x + side; px++) {
+			for (int py = y; py < y + side; py++) {
+				if (!tiles.is_valid_spot(px, py))
+					return 200000000;
+				if (tiles.get(px, py))
+					n++;
+			}
+		}
+
+		return n;
+	};
+
+	auto check_circle = [&tiles](int x, int y, int r) -> glm::vec2 {
+		for (int px = x - r; px <= x + r; px++) {
+			for (int py = y - r; py <= y + r; py++) {
+				auto dist = std::hypot(px - x, py - y);
+				if (dist < r && 
+					tiles.is_valid_spot(px, py) &&
+					tiles.get(px, py)) {
+					return {px, py};
+				}
+			}
+		}
+
+		return {-1, -1};
+	};
+
+	constexpr int block_size_min = 10;
+	constexpr int block_size_max = 20;
+	int next_size = rng_between<int>(block_size_min, block_size_max) * 2;
+
+	auto place_rect = [&next_size, &tiles, &check_rect](int x, int y, int side) -> bool {
+		if (int n = check_rect(x, y, next_size); n > (next_size * next_size * 2) / 3)
+			return false;
+		for (int px = x; px < x + side; px++) {
+			for (int py = y; py < y + side; py++) {
+				if (tiles.is_valid_spot(px, py)) {
+					tiles.set(px, py, true);
+				}
+			}
+		}
+
+		tiles.upload_texture();
+
+		return true;
+	};
+
+	glm::vec4 cursor_color = {1,1,1,1};
+
+	int hp = 2;
+	int blocks = 5;
+
+	float rate = 0;
+	auto time1 = std::chrono::high_resolution_clock::now();
+	auto time2 = std::chrono::high_resolution_clock::now();
+	auto time3 = std::chrono::high_resolution_clock::now();
+	bool is_game_over = false;
 	bool draw_console = false;
 	bool loop = true;
 	while(loop) {
-		glClearColor(0.364f, 0.737f, 0.823f, 1.f);
+		glClearColor(0.63921f, 0.97647f, 1.f, 1.f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		SDL_Event ev;
@@ -165,21 +274,41 @@ int main(int argc, char *argv[]) {
 			if (_imgui_drawer.process_event(&ev))
 				continue;
 			if (ev.type == SDL_TEXTINPUT) {
-				if (*ev.text.text == '~' || *ev.text.text == '`') {
+				if (is_game_over)
+					loop = false;
+				if (*ev.text.text == '~' || *ev.text.text == '`')
 					draw_console = !draw_console;
-				}
-				if (*ev.text.text == '1' || *ev.text.text == '!') {
-					trigger_screenshake(5);
-				}
 			}
-			if (ev.type == SDL_MOUSEBUTTONDOWN) {
-				int x = ev.button.x - 72,
-					y = ev.button.y - 140;
-				if (x < build_tile_view::width &&
-					y < build_tile_view::height)
-					break_around(128, x, y);
-			}
+			if (ev.type == SDL_MOUSEBUTTONDOWN && !is_game_over) {
+				int x = ev.button.x - 72 - next_size / 2,
+					y = ev.button.y - 140 - next_size / 2;
+				bool h = true;
+				if (crate_visible && ev.button.x >= crate_pos.x
+					&& ev.button.x < crate_pos.x + 32
+					&& ev.button.y >= crate_pos.y
+					&& ev.button.y < crate_pos.y + 32) {
+					blocks += rng_between<int>(5, 15);
+					crate_visible = false;
+					h = false;
+				} else if (tiles.is_valid_spot(x, y) && blocks) {
+					if (place_rect(x, y, next_size))
+						blocks--;
+				}
 
+				if (h)
+					next_size = rng_between<int>(block_size_min, block_size_max) * 2;
+			}
+			if (ev.type == SDL_MOUSEMOTION && !is_game_over) {
+				int x = ev.motion.x - 16, y = ev.motion.y - 16;
+
+				cur_sprite.position() = {x, y, 0};
+				if (!blocks)
+					cursor_color = {1,0,1,1};
+				else if (int n = check_rect(x - 72, y - 140, next_size); n > (next_size * next_size * 2) / 3)
+					cursor_color = {1,0,0,1};
+				else
+					cursor_color = {1,1,1,1};
+			}
 		}
 
 		_imgui_drawer.update();
@@ -195,19 +324,118 @@ int main(int argc, char *argv[]) {
 		screen_shake_offset *= mag;
 
 		prog.set_uniform("ortho", ortho);
-		bg1_sprite.render({0, 0, 0});
+		prog.set_uniform("model_color", glm::vec4({1,1,1,1}));
+
+		bg1_sprite.render({0,0,0});
 		level1.render(screen_shake_offset);
 		tiles.render();
-		for (int i = 0; i < n; i++) {
+		for (size_t i = 0; i < ufos.size(); i++) {
 			ufo.position() = ufos[i];
 			ufo.render(screen_shake_offset);
-			ufos[i] += ufo_speeds[i];
+			if (!is_game_over)
+				ufos[i] += ufo_speeds[i];
 
 			auto &pos = ufos[i];
 			if (pos.x < -72)
 				pos.x = 1280;
 			if (pos.x > 1280)
 				pos.x = -72;
+		}
+
+		if (!is_game_over && rng_between<float>(1, 100) > 99.f - rate) {
+			missiles.push_back(missile{ufos[rng_between<size_t>(0, ufos.size() - 1)], {}, {}});
+		}
+
+		for (auto &_missile : missiles) {
+			_missile.render(screen_shake_offset, missile_spr);
+
+			if (!is_game_over) {
+				_missile.update();
+
+				int x = _missile.position.x - 72;
+				int y = _missile.position.y - 140;
+
+				if (auto impact = check_circle(x, y, 10); impact != glm::vec2{-1, -1}) {
+					break_around(impact.x, impact.y, rng_between<int>(16, 24));
+					_missile.do_remove = true;
+				}
+
+				if (std::hypot(x + 72 - 640, y + 140 - 362) < 40) {
+					// hit
+					hp--;
+					if (hp == 1) {
+						level1.swap_object_with_replacement("egg");
+						_missile.do_remove = true;
+					}
+
+					if (!hp) {
+						level1.remove_object("egg");
+						is_game_over = true;
+					}
+				}
+			}
+		}
+
+		size_t i = 0;
+		while (i < missiles.size()) {
+			if (missiles[i].do_remove)
+				missiles.erase(missiles.begin() + i);
+			else
+				i++;
+		}
+
+		if (crate_visible) {
+			crate_spr.position() = crate_pos;
+			crate_spr.render(screen_shake_offset);
+			if (!is_game_over)
+				crate_pos += glm::vec3{0, 2, 0};
+
+			if (crate_pos.y >= 720)
+				crate_visible = false;
+		}
+
+		if (!is_game_over) {
+			auto now = std::chrono::high_resolution_clock::now();
+
+			if (now - time1 >= 10s) {
+				add_ufo();
+				time1 = now;
+			}
+
+			if (now - time2 >= 2s && !crate_visible) {
+				if (rng_between<int>(1, 100) > 40) {
+					crate_pos = {
+						rng_between<int>(64, 1216),
+						-32, 0};
+					crate_visible = true;
+				}
+				time2 = now;
+			} else if (crate_visible) {
+				time2 = now;
+			}
+
+			if (now - time3 >= 6s) {
+				rate += 0.2f;
+				time3 = now;
+			}
+		}
+
+		rain_sprite.render({0,0,0});
+		rain_sprite.position() += glm::vec3{-6.66666, 7, 0};
+
+		auto dr = base_pos - rain_sprite.position();
+		if (std::round(dr.x) == 200 && std::round(dr.y) == -210) {
+			rain_sprite.position() = base_pos;
+		}
+
+		prog.set_uniform("model_color", cursor_color);
+		cur_sprite.render(screen_shake_offset);
+
+		prog.set_uniform("model_color", glm::vec4({1,1,1,1}));
+
+		if (is_game_over) {
+			gameover_sprite.render({0,0,0});
+			toexit_sprite.render({0,0,0});
 		}
 
 		ImGui::NewFrame();

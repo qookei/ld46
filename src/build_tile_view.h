@@ -17,7 +17,11 @@ struct build_tile_view {
 	void render();
 
 	bool is_valid_spot(int x, int y) {
-		return (x < 480 || x >= 656) ? true : y < 136;
+		return (x >= 0 &&
+			x < width &&
+			y >= 0 &&
+			y < height) &&
+			((x < 480 || x >= 656) ? true : y < 136);
 	}
 
 	void set(int x, int y, bool v) {

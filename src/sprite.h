@@ -109,9 +109,18 @@ struct sprite {
 		return *this;
 	}
 
-	void render(glm::vec3 world_transform) {
+	void render(glm::vec3 world_transform, float angle = 0, bool do_rotate = false) {
 		_prog->use();
 		glm::mat4 model = glm::translate(_pos + world_transform);
+		if (do_rotate) {
+			model = glm::rotate(model,
+					angle, glm::vec3{0, 0, 1});
+			model = glm::translate(model,
+					world_transform
+					- glm::vec3{
+						_t.width() / 2,
+						_t.height() / 2, 0});
+		}
 
 		_prog->set_uniform("model", model);
 		_m.render(_t);

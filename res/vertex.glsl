@@ -9,9 +9,10 @@ out vec2 frag_uv;
 
 uniform mat4 ortho;
 uniform mat4 model;
+uniform vec4 model_color;
 
 void main() {
 	gl_Position = ortho * model * vec4(vert_pos.xy, 0.0, 1.0);
-	frag_color = color;
+	frag_color = color * model_color;
 	frag_uv = tex_pos;
 }

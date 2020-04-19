@@ -31,6 +31,11 @@ struct shader_prog {
 		auto loc = glGetUniformLocation(_id, name.c_str());
 		glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(val));
 	}
+
+	void set_uniform(const std::string &name, glm::vec4 val) {
+		auto loc = glGetUniformLocation(_id, name.c_str());
+		glUniform4fv(loc, 1, glm::value_ptr(val));
+	}
 private:
 
 	GLuint with_shader(const std::string &path, GLenum type);

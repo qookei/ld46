@@ -11,7 +11,7 @@ static glm::vec2 vec2_from_json(json j) {
 }
 
 level::level(const std::string &path, shader_prog *prog)
-:_prog{prog}, _objs{}, _tex{} {
+:_prog{prog}, _objs{}, _replac{}, _tex{} {
 
 	std::ifstream i{path};
 	if (!i.good()) {
@@ -24,8 +24,6 @@ level::level(const std::string &path, shader_prog *prog)
 
 	for (auto [name, info] : level_desc["textures"].items()) {
 		auto size = vec2_from_json(info["size"]);
-		console::dbg("got texture '%s': path '%s' size %fx%f",
-			name.c_str(), info["path"].get<std::string>().c_str(), size.x, size.y);
 		_tex[name].size = size;
 		_tex[name].tex = std::move(
 			texture::load_from_file(
@@ -39,9 +37,17 @@ level::level(const std::string &path, shader_prog *prog)
 		auto tex_size = vec2_from_json(info["tex_size"]);
 		auto tex = info["tex"].get<std::string>();
 		auto times = info.count("times") ? info["times"].get<int>() : 1;
-		console::dbg("got object '%s': texture '%s' pos %fx%f tex %fx%f size %fx%f",
-			name.c_str(), tex.c_str(), pos.x, pos.y, tex_pos.x, tex_pos.y, size.x, size.y);
 		_objs.emplace(name, level_object{tex, pos, size, tex_pos, tex_size, times});
+	}
+
+	for (auto [name, info] : level_desc["replacements"].items()) {
+		auto pos = vec2_from_json(info["pos"]);
+		auto tex_pos = vec2_from_json(info["tex_pos"]);
+		auto size = vec2_from_json(info["size"]);
+		auto tex_size = vec2_from_json(info["tex_size"]);
+		auto tex = info["tex"].get<std::string>();
+		auto times = info.count("times") ? info["times"].get<int>() : 1;
+		_replac.emplace(name, level_object{tex, pos, size, tex_pos, tex_size, times});
 	}
 
 	generate_mesh();
@@ -105,12 +111,15 @@ void level::generate_mesh() {
 		auto it = _meshes.emplace(name, _prog).first;
 
 		auto &_m = it->second;
-		_m.gen_buffers();
-		_m.gen_vao();
+		if (!_m.is_ready()) {
+			_m.gen_buffers();
+			_m.gen_vao();
+		}
+
 		_m.vbo()->store_regenerate(
 			verts.data(),
 			verts.size() * sizeof(vertex),
-			GL_STATIC_DRAW);
+			GL_DYNAMIC_DRAW);
 		_m.mark_valid();
 	}
 }

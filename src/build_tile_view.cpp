@@ -2,6 +2,7 @@
 
 build_tile_view::build_tile_view(shader_prog *prog)
 :_mesh{prog}, _tex{} {
+	memset(_pixels.data(), 0, width * height * 4);
 	_mesh.gen_buffers();
 	_mesh.gen_vao();
 
