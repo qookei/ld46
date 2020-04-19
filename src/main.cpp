@@ -70,12 +70,15 @@ static T rng_between(T min, T max) {
 	}
 }
 
+bool is_hard_mode = false;
+
 struct missile {
 	glm::vec3 position;
 	glm::vec3 velocity;
 	float angle;
 	float d = 2.f;
-	float speed = rng_between<float>(1.8f, 2.2f);
+	float speed = rng_between<float>(1.8f, 2.2f)
+		* (is_hard_mode ? 2 : 1);
 
 	int i = 0;
 	constexpr static int n = 50;
@@ -102,7 +105,7 @@ struct missile {
 	}
 };
 
-int main() {
+extern "C" int main(int, char **) {
 	using namespace std::literals::chrono_literals;
 	window _wnd;
 
@@ -302,12 +305,6 @@ int main() {
 				loop = false;
 			if (_imgui_drawer.process_event(&ev))
 				continue;
-			if (ev.type == SDL_TEXTINPUT) {
-				if (is_game_over)
-					loop = false;
-				if (*ev.text.text == '~' || *ev.text.text == '`')
-					draw_console = !draw_console;
-			}
 			if (ev.type == SDL_MOUSEBUTTONDOWN && !in_menu) {
 				int x = ev.button.x - 72 - next_size / 2,
 					y = ev.button.y - 140 - next_size / 2;
@@ -328,10 +325,13 @@ int main() {
 					next_size = rng_between<int>(block_size_min, block_size_max) * 2;
 			}
 			if (ev.type == SDL_MOUSEBUTTONDOWN && is_main_menu) {
-				bool is_hard_mode = ev.button.button == SDL_BUTTON_RIGHT;
+				is_hard_mode = ev.button.button == SDL_BUTTON_RIGHT;
 				console::dbg("is hard mode? %s", is_hard_mode ? "yes" : "no");
 				in_menu = false;
 				is_main_menu = false;
+			}
+			if (ev.type == SDL_MOUSEBUTTONDOWN && is_game_over) {
+				loop = false;
 			}
 			if (ev.type == SDL_MOUSEMOTION && !in_menu) {
 				int x = ev.motion.x - 16, y = ev.motion.y - 16;
@@ -368,7 +368,7 @@ int main() {
 			ufo.position() = ufos[i];
 			ufo.render(screen_shake_offset);
 			if (!in_menu)
-				ufos[i] += ufo_speeds[i];
+				ufos[i] += ufo_speeds[i] * glm::vec3{(is_hard_mode ? 2 : 1), 0, 0};
 
 			auto &pos = ufos[i];
 			if (pos.x < -72)
@@ -377,7 +377,7 @@ int main() {
 				pos.x = -72;
 		}
 
-		if (!in_menu && rng_between<float>(1, 100) > 99.f - rate) {
+		if (!in_menu && rng_between<float>(1, 100) > (is_hard_mode ? 98.f : 99.f) - rate) {
 			missiles.push_back(missile{ufos[rng_between<size_t>(0, ufos.size() - 1)], {}, {}});
 		}
 
@@ -391,7 +391,7 @@ int main() {
 				int y = _missile.position.y - 140;
 
 				if (auto impact = check_circle(x, y, 10); impact != glm::vec2{-1, -1}) {
-					break_around(impact.x, impact.y, rng_between<int>(16, 24));
+					break_around(impact.x, impact.y, rng_between<int>(16, 24) * (is_hard_mode ? 2 : 1));
 					_missile.do_remove = true;
 				}
 
