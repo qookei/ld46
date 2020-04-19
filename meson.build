@@ -15,6 +15,7 @@ sources = files(
 includes = include_directories('src')
 
 sdl2_dep = dependency('SDL2', method: 'pkg-config')
+sdl2_mixer_dep = dependency('SDL2_mixer', method: 'pkg-config')
 epoxy_dep = dependency('epoxy')
 threads_dep = dependency('threads')
 
@@ -35,4 +36,4 @@ imgui_dep = declare_dependency(link_with: imgui_lib, include_directories: imgui_
 
 executable('ldeng', sources,
 	include_directories: [includes, glm_inc, subprojects_inc],
-	dependencies: [sdl2_dep, epoxy_dep, threads_dep, imgui_dep])
+	dependencies: [sdl2_dep, sdl2_mixer_dep, epoxy_dep, threads_dep, imgui_dep])

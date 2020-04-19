@@ -23,6 +23,8 @@
 #include <random>
 #include <chrono>
 
+#include <SDL2/SDL_mixer.h>
+
 void gl_debug_callback(GLenum source, GLenum type, GLuint, GLenum,
 		GLsizei length, const char *message, const void *) {
 
@@ -103,6 +105,22 @@ struct missile {
 int main() {
 	using namespace std::literals::chrono_literals;
 	window _wnd;
+
+	if (Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 512) < 0)
+		window::report_fatal("main: failed to open mixer: %s", SDL_GetError());
+
+	if (Mix_AllocateChannels(4) < 0)
+		window::report_fatal("main: failed to allocate channels: %s", SDL_GetError());
+
+	Mix_Chunk *explosion_sound, *death_sound;
+	explosion_sound = Mix_LoadWAV("res/explosion.wav");
+	death_sound = Mix_LoadWAV("res/death.wav");
+
+	if (!explosion_sound)
+		window::report_fatal("main: failed to open explosion sound: %s", SDL_GetError());
+
+	if (!death_sound)
+		window::report_fatal("main: failed to open death sound: %s", SDL_GetError());
 
 	glEnable(GL_DEBUG_OUTPUT);
 	//glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); // disable if in release
@@ -198,6 +216,7 @@ int main() {
 
 	auto break_around = [&](int x, int y, int r){
 		trigger_screenshake(1);
+		Mix_PlayChannel(-1, explosion_sound, 0);
 		for (int px = x - r; px <= x + r; px++) {
 			for (int py = y - r; py <= y + r; py++) {
 				auto dist = std::hypot(px - x, py - y)
@@ -385,6 +404,7 @@ int main() {
 					}
 
 					if (!hp) {
+						Mix_PlayChannel(-1, death_sound, 0);
 						level1.remove_object("egg");
 						is_game_over = true;
 						in_menu = true;
@@ -464,7 +484,6 @@ int main() {
 			howto_sprite.render({0,0,0});
 		}
 
-
 		ImGui::NewFrame();
 
 		if (screenshake_time > 0)
@@ -484,6 +503,10 @@ int main() {
 
 		_wnd.swap();
 	}
+
+	Mix_FreeChunk(explosion_sound);
+	Mix_FreeChunk(death_sound);
+	Mix_CloseAudio();
 
 	return 0;
 }
