@@ -146,7 +146,7 @@ extern "C" int main(int, char **) {
 	sprite bg2_sprite{"res/bg2.png", &prog, 1280, 720};
 	sprite cur_sprite{"res/cur.png", &prog, 32, 32};
 	sprite gameover_sprite{"res/gameover.png", &prog, 643, 99};
-	sprite toexit_sprite{"res/toexit.png", &prog, 1035, 104};
+	sprite toexit_sprite{"res/toexit.png", &prog, 957, 237};
 	sprite title_sprite{"res/title.png", &prog, 624, 104};
 	sprite info_sprite{"res/info.png", &prog, 1081, 227};
 	sprite howto_sprite{"res/howto.png", &prog, 885, 178};
@@ -154,21 +154,17 @@ extern "C" int main(int, char **) {
 	auto base_pos = rain_sprite.position() = {-500, -500, 0};
 
 	gameover_sprite.position() = {318, 310, 0};
-	toexit_sprite.position() = {122, 410, 0};
+	toexit_sprite.position() = {161, 410, 0};
 
 	title_sprite.position() = {328, 100, 0};
 	info_sprite.position() = {99, 220, 0};
 	howto_sprite.position() = {10, 532, 0};
-
-	int n = 1;
 
 	sprite ufo{"res/tiles.png", &prog, 888, 780, 72, 68, 296, 473};
 	sprite missile_spr{"res/missile.png", &prog, 24, 56, 24, 56, 0, 0};
 	sprite crate_spr{"res/tiles.png", &prog, 888, 780, 32, 32, 485, 448};
 	std::vector<glm::vec3> ufos;
 	std::vector<glm::vec3> ufo_speeds;
-	ufos.reserve(n);
-	ufo_speeds.reserve(n);
 
 	std::vector<missile> missiles;
 
@@ -200,9 +196,7 @@ extern "C" int main(int, char **) {
 		ufo_speeds.push_back(glm::vec3{rng_between<int>(0, 1) ? 2 : -2, 0, 0});
 	};
 
-	for (int i = 0; i < n; i++) {
-		add_ufo();
-	}
+	add_ufo();
 
 	glm::mat4 ortho = glm::ortho(0.f, 1280.f, 720.f, 0.f);
 
@@ -232,7 +226,7 @@ extern "C" int main(int, char **) {
 		tiles.upload_texture();
 	};
 
-	auto check_rect = [&tiles](int x, int y, int side) -> int {
+	auto check_rect = [&](int x, int y, int side) -> int {
 		int n = 0;
 		for (int px = x; px < x + side; px++) {
 			for (int py = y; py < y + side; py++) {
@@ -246,7 +240,7 @@ extern "C" int main(int, char **) {
 		return n;
 	};
 
-	auto check_circle = [&tiles](int x, int y, int r) -> glm::vec2 {
+	auto check_circle = [&](int x, int y, int r) -> glm::vec2 {
 		for (int px = x - r; px <= x + r; px++) {
 			for (int py = y - r; py <= y + r; py++) {
 				auto dist = std::hypot(px - x, py - y);
@@ -265,7 +259,7 @@ extern "C" int main(int, char **) {
 	constexpr int block_size_max = 20;
 	int next_size = rng_between<int>(block_size_min, block_size_max) * 2;
 
-	auto place_rect = [&next_size, &tiles, &check_rect](int x, int y, int side) -> bool {
+	auto place_rect = [&](int x, int y, int side) -> bool {
 		if (int n = check_rect(x, y, next_size); n > (next_size * next_size * 2) / 3)
 			return false;
 		for (int px = x; px < x + side; px++) {
@@ -290,11 +284,45 @@ extern "C" int main(int, char **) {
 	auto time1 = std::chrono::high_resolution_clock::now();
 	auto time2 = std::chrono::high_resolution_clock::now();
 	auto time3 = std::chrono::high_resolution_clock::now();
+	auto time4 = std::chrono::high_resolution_clock::now();
 	bool in_menu = true;
 	bool is_main_menu = true;
 	bool is_game_over = false;
 	bool draw_console = false;
 	bool loop = true;
+
+	auto reset_state = [&]() {
+		rate = 0;
+		hp = 2;
+		blocks = 5;
+		time1 = std::chrono::high_resolution_clock::now();
+		time2 = std::chrono::high_resolution_clock::now();
+		time3 = std::chrono::high_resolution_clock::now();
+		time4 = std::chrono::high_resolution_clock::now();
+
+		for (int x = 0; x < build_tile_view::width; x++) {
+			for (int y = 0; y < build_tile_view::height; y++) {
+				if (tiles.is_valid_spot(x, y))
+					tiles.set(x, y, false);
+			}
+		}
+
+		tiles.upload_texture();
+
+		level1.object("egg").enabled = true;
+		level1.swap_object_with_replacement("egg");
+		level1.object("egg").enabled = true;
+
+		ufos.clear();
+		ufo_speeds.clear();
+		missiles.clear();
+
+		add_ufo();
+
+		crate_visible = false;
+		is_game_over = false;
+	};
+
 	while(loop) {
 		glClearColor(0.63921f, 0.97647f, 1.f, 1.f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -323,15 +351,20 @@ extern "C" int main(int, char **) {
 
 				if (h)
 					next_size = rng_between<int>(block_size_min, block_size_max) * 2;
-			}
-			if (ev.type == SDL_MOUSEBUTTONDOWN && is_main_menu) {
+			} else if (ev.type == SDL_MOUSEBUTTONDOWN && is_main_menu) {
 				is_hard_mode = ev.button.button == SDL_BUTTON_RIGHT;
 				console::dbg("is hard mode? %s", is_hard_mode ? "yes" : "no");
 				in_menu = false;
 				is_main_menu = false;
-			}
-			if (ev.type == SDL_MOUSEBUTTONDOWN && is_game_over) {
-				loop = false;
+
+				time1 = std::chrono::high_resolution_clock::now();
+				time2 = std::chrono::high_resolution_clock::now();
+				time3 = std::chrono::high_resolution_clock::now();
+				time4 = std::chrono::high_resolution_clock::now();
+			} else if (ev.type == SDL_MOUSEBUTTONDOWN && is_game_over) {
+				console::dbg("here");
+				reset_state();
+				in_menu = is_main_menu = ev.button.button == SDL_BUTTON_RIGHT;
 			}
 			if (ev.type == SDL_MOUSEMOTION && !in_menu) {
 				int x = ev.motion.x - 16, y = ev.motion.y - 16;
@@ -377,7 +410,9 @@ extern "C" int main(int, char **) {
 				pos.x = -72;
 		}
 
-		if (!in_menu && rng_between<float>(1, 100) > (is_hard_mode ? 98.f : 99.f) - rate) {
+		auto now = std::chrono::high_resolution_clock::now();
+
+		if ((now - time4 >= 4s) && !in_menu && rng_between<float>(1, 100) > (is_hard_mode ? 98.f : 99.f) - rate) {
 			missiles.push_back(missile{ufos[rng_between<size_t>(0, ufos.size() - 1)], {}, {}});
 		}
 
@@ -399,13 +434,15 @@ extern "C" int main(int, char **) {
 					// hit
 					hp--;
 					if (hp == 1) {
+						Mix_PlayChannel(-1, explosion_sound, 0);
 						level1.swap_object_with_replacement("egg");
 						_missile.do_remove = true;
 					}
 
 					if (!hp) {
 						Mix_PlayChannel(-1, death_sound, 0);
-						level1.remove_object("egg");
+						level1.object("egg").enabled = false;
+						level1.generate_mesh();
 						is_game_over = true;
 						in_menu = true;
 					}
@@ -432,8 +469,6 @@ extern "C" int main(int, char **) {
 		}
 
 		if (!in_menu) {
-			auto now = std::chrono::high_resolution_clock::now();
-
 			if (now - time1 >= 10s) {
 				add_ufo();
 				time1 = now;

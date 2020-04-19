@@ -16,6 +16,7 @@ struct level {
 		glm::vec2 tex_pos;
 		glm::vec2 tex_size;
 		int times;
+		bool enabled;
 	};
 
 	struct level_texture {
@@ -40,6 +41,8 @@ struct level {
 		return _objs[name];
 	}
 
+	void generate_mesh();
+
 private:
 	shader_prog *_prog;
 
@@ -48,6 +51,4 @@ private:
 	std::unordered_map<std::string, level_texture> _tex;
 
 	std::unordered_map<std::string, mesh> _meshes;
-
-	void generate_mesh();
 };

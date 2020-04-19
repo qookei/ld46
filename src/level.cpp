@@ -37,7 +37,7 @@ level::level(const std::string &path, shader_prog *prog)
 		auto tex_size = vec2_from_json(info["tex_size"]);
 		auto tex = info["tex"].get<std::string>();
 		auto times = info.count("times") ? info["times"].get<int>() : 1;
-		_objs.emplace(name, level_object{tex, pos, size, tex_pos, tex_size, times});
+		_objs.emplace(name, level_object{tex, pos, size, tex_pos, tex_size, times, true});
 	}
 
 	for (auto [name, info] : level_desc["replacements"].items()) {
@@ -47,7 +47,7 @@ level::level(const std::string &path, shader_prog *prog)
 		auto tex_size = vec2_from_json(info["tex_size"]);
 		auto tex = info["tex"].get<std::string>();
 		auto times = info.count("times") ? info["times"].get<int>() : 1;
-		_replac.emplace(name, level_object{tex, pos, size, tex_pos, tex_size, times});
+		_replac.emplace(name, level_object{tex, pos, size, tex_pos, tex_size, times, true});
 	}
 
 	generate_mesh();
@@ -67,6 +67,9 @@ void level::render(glm::vec3 world_transform) {
 void level::generate_mesh() {
 	std::unordered_map<std::string, std::vector<vertex>> _verts;
 	for (auto &[_, obj] : _objs) {
+		if (!obj.enabled)
+			continue;
+
 		auto &tex = obj.tex_name;
 		auto &tobj = _tex[tex];
 
