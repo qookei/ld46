@@ -115,15 +115,23 @@ extern "C" int main(int, char **) {
 	if (Mix_AllocateChannels(4) < 0)
 		window::report_fatal("main: failed to allocate channels: %s", SDL_GetError());
 
-	Mix_Chunk *explosion_sound, *death_sound;
+	Mix_Chunk *explosion_sound, *death_sound, *crate_sound, *hatch_sound;
 	explosion_sound = Mix_LoadWAV("res/explosion.wav");
 	death_sound = Mix_LoadWAV("res/death.wav");
+	crate_sound = Mix_LoadWAV("res/crate.wav");
+	hatch_sound = Mix_LoadWAV("res/hatch.wav");
 
 	if (!explosion_sound)
 		window::report_fatal("main: failed to open explosion sound: %s", SDL_GetError());
 
 	if (!death_sound)
 		window::report_fatal("main: failed to open death sound: %s", SDL_GetError());
+
+	if (!crate_sound)
+		window::report_fatal("main: failed to open crate sound: %s", SDL_GetError());
+
+	if (!hatch_sound)
+		window::report_fatal("main: failed to open hatch sound: %s", SDL_GetError());
 
 	glEnable(GL_DEBUG_OUTPUT);
 	//glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); // disable if in release
@@ -151,6 +159,8 @@ extern "C" int main(int, char **) {
 	sprite info_sprite{"res/info.png", &prog, 1081, 227};
 	sprite howto_sprite{"res/howto.png", &prog, 885, 178};
 	sprite rain_sprite{"res/rain.png", &prog, 200, 210, 2000, 2000, 0, 0};
+	sprite easy_sprite{"res/easy.png", &prog, 345, 77};
+	sprite hard_sprite{"res/hard.png", &prog, 346, 62};
 	auto base_pos = rain_sprite.position() = {-500, -500, 0};
 
 	gameover_sprite.position() = {318, 310, 0};
@@ -159,6 +169,9 @@ extern "C" int main(int, char **) {
 	title_sprite.position() = {328, 100, 0};
 	info_sprite.position() = {99, 220, 0};
 	howto_sprite.position() = {10, 532, 0};
+
+	easy_sprite.position() = {467, 627, 0};
+	hard_sprite.position() = {468, 627, 0};
 
 	sprite ufo{"res/tiles.png", &prog, 888, 780, 72, 68, 296, 473};
 	sprite missile_spr{"res/missile.png", &prog, 24, 56, 24, 56, 0, 0};
@@ -322,6 +335,7 @@ extern "C" int main(int, char **) {
 
 		crate_visible = false;
 		is_game_over = false;
+		has_hatched = false;
 	};
 
 	while(loop) {
@@ -345,6 +359,7 @@ extern "C" int main(int, char **) {
 					blocks += rng_between<int>(5, 15);
 					crate_visible = false;
 					h = false;
+					Mix_PlayChannel(-1, crate_sound, 0);
 				} else if (tiles.is_valid_spot(x, y) && blocks) {
 					if (place_rect(x, y, next_size))
 						blocks--;
@@ -354,7 +369,6 @@ extern "C" int main(int, char **) {
 					next_size = rng_between<int>(block_size_min, block_size_max) * 2;
 			} else if (ev.type == SDL_MOUSEBUTTONDOWN && is_main_menu) {
 				is_hard_mode = ev.button.button == SDL_BUTTON_RIGHT;
-				console::dbg("is hard mode? %s", is_hard_mode ? "yes" : "no");
 				in_menu = false;
 				is_main_menu = false;
 				level1.swap_object_with_replacement("egg");
@@ -362,7 +376,6 @@ extern "C" int main(int, char **) {
 				reset_state();
 
 			} else if (ev.type == SDL_MOUSEBUTTONDOWN && is_game_over) {
-				console::dbg("here");
 				reset_state();
 				in_menu = is_main_menu = ev.button.button == SDL_BUTTON_RIGHT;
 			}
@@ -502,7 +515,15 @@ extern "C" int main(int, char **) {
 				level1.object("egg").enabled = false;
 				level1.generate_mesh();
 				has_hatched = true;
+				Mix_PlayChannel(-1, hatch_sound, 0);
 			}
+		}
+
+		if (!is_main_menu) {
+			if (is_hard_mode)
+				hard_sprite.render({0,0,0});
+			else
+				easy_sprite.render({0,0,0});
 		}
 
 		rain_sprite.render({0,0,0});
@@ -554,6 +575,8 @@ extern "C" int main(int, char **) {
 
 	Mix_FreeChunk(explosion_sound);
 	Mix_FreeChunk(death_sound);
+	Mix_FreeChunk(crate_sound);
+	Mix_FreeChunk(hatch_sound);
 	Mix_CloseAudio();
 
 	return 0;
