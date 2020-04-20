@@ -12,6 +12,7 @@ A Linux build *is* provided but it is strongly advised that you compile it on yo
 You will need:
  - A C++17 compliant compiler (GCC 7 or newer, or Clang 5 or newer recommended)
  - SDL2 libraries (both the normal and devel variant, eg. libsdl2 and libsdl2-dev)
+ - SDL2\_mixer libraries (both the normal and devel variant, eg. SDL2\_mixer and SDL2\_mixer-devel)
  - libepoxy (both the normal and devel variant, eg. libepoxy and libepoxy-dev)
  - Meson and ninja
 
@@ -37,6 +38,7 @@ lol good luck; I haven't done this.
 You will need:
  - A C++17 compliant cross-compiler that targets `x86_64-w64-mingw32` (or some other mingw32 toolchain if you modify the cross file)
  - SDL2 mingw developer package installed into the mingw directories (`/usr/x86_64-w64-mingw32/{bin,lib,include}`)
+ - SDL2\_mixer mingw developer package installed into the mingw directories (`/usr/x86_64-w64-mingw32/{bin,lib,include}`)
  - libepoxy installed into mingw directories (you need to do this manually)
  - Meson and ninja
 
